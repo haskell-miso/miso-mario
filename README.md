@@ -1,4 +1,4 @@
-# :ramen: miso-mario
+# :ramen: 🍄 miso-mario
 
 ## Build and run
 
