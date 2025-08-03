@@ -29,7 +29,7 @@ main :: IO ()
 main = run $ do
     time <- now
     let m = mario{time = time}
-    startComponent (component m updateMario display)
+    startApp (component m updateMario display)
       { subs =
           [ arrowsSub GetArrows
           , windowCoordsSub WindowCoords
@@ -69,7 +69,7 @@ mario =
         , window = (0, 0)
         }
 
-updateMario :: Action -> Effect Model Action
+updateMario :: Action -> Transition Model Action
 updateMario Start = get >>= step
 updateMario (GetArrows arrs) = do
   modify newModel
@@ -90,7 +90,7 @@ updateMario (WindowCoords coords) = do
     where
       newModel m = m { window = coords }
 
-step :: Model -> Effect Model Action
+step :: Model -> Transition Model Action
 step m@Model{..} = k <# Time <$> now
   where
     k =
@@ -128,7 +128,7 @@ walk Arrows{..} m@Model{..} =
                 | otherwise -> dir
         }
 
-display :: Model -> View action
+display :: Model -> View model Action
 display m@Model{..} = marioImage
   where
     (h, w) = window
