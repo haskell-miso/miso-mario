@@ -6,11 +6,8 @@
 -----------------------------------------------------------------------------
 module Main (main) where
 -----------------------------------------------------------------------------
-import           Data.Bool
-import           Data.Function
------------------------------------------------------------------------------
 import           Miso
-import           Miso.String
+import           Miso.Lens
 import qualified Miso.Style as CSS
 -----------------------------------------------------------------------------
 data Action
@@ -20,7 +17,16 @@ data Action
   | Start
 -----------------------------------------------------------------------------
 spriteFrames :: [MisoString]
-spriteFrames = ["0 0", "-74px 0", "-111px 0", "-148px 0", "-185px 0", "-222px 0", "-259px 0", "-296px 0"]
+spriteFrames =
+  [ "0 0"
+  , "-74px 0"
+  , "-111px 0"
+  , "-148px 0"
+  , "-185px 0"
+  , "-222px 0"
+  , "-259px 0"
+  , "-296px 0"
+  ]
 -----------------------------------------------------------------------------
 #ifdef WASM
 foreign export javascript "hs_start" main :: IO ()
@@ -28,22 +34,21 @@ foreign export javascript "hs_start" main :: IO ()
 -----------------------------------------------------------------------------
 main :: IO ()
 main = run $ do
-    time <- now
-    let m = mario{time = time}
-    startApp (component m updateMario display)
-      { subs =
-          [ arrowsSub GetArrows
-          , windowCoordsSub WindowCoords
-          ]
-      , initialAction = Just Start
-      }
+  time <- now
+  let m = defaultMario { time = time }
+  startApp (component m updateMario viewMario)
+    { subs =
+        [ arrowsSub GetArrows
+        , windowCoordsSub WindowCoords
+        ]
+    , initialAction = Just Start
+    }
 -----------------------------------------------------------------------------
-data Model = Model
+data Mario = Mario
   { x,y :: !Double
   , vx,vy :: !Double
+  , time, delta :: !Double
   , dir :: !Direction
-  , time :: !Double
-  , delta :: !Double
   , arrows :: !Arrows
   , window :: !(Int, Int)
   } deriving (Show, Eq)
@@ -53,9 +58,8 @@ data Direction
   | R
   deriving (Show, Eq)
 -----------------------------------------------------------------------------
-mario :: Model
-mario
-  = Model
+defaultMario :: Mario
+defaultMario = Mario
   { x = 0
   , y = 0
   , vx = 0
@@ -67,53 +71,56 @@ mario
   , window = (0, 0)
   }
 -----------------------------------------------------------------------------
-updateMario :: Action -> Transition Model Action
+updateMario :: Action -> Transition Mario Action
 updateMario Start = get >>= step
 updateMario (GetArrows arrs) = do
-  modify newModel
+  modify newMario
   step =<< get
     where
-      newModel m = m { arrows = arrs }
+      newMario m = m { arrows = arrs }
 updateMario (Time newTime) = do
-  modify newModel
+  modify newMario
   step =<< get
     where
-      newModel m = m
+      newMario m = m
         { delta = (newTime - time m) / 20
         , time = newTime
         }
 updateMario (WindowCoords coords) = do
-  modify newModel
+  modify newMario
   step =<< get
     where
-      newModel m = m { window = coords }
+      newMario m = m { window = coords }
 -----------------------------------------------------------------------------
-step :: Model -> Transition Model Action
-step m@Model{..} = k <# Time <$> now
-  where
-    k = m & gravity delta
-          & jump arrows
-          & walk arrows
-          & physics delta
+-- | Helper lens for 'Mario'
+mario :: Lens Mario Mario
+mario = this
 -----------------------------------------------------------------------------
-jump :: Arrows -> Model -> Model
-jump Arrows{..} m@Model{..} =
-    if arrowY > 0 && vy == 0
-        then m{vy = 6}
-        else m
+step :: Mario -> Transition Mario Action
+step Mario{..} = do
+  mario %= gravity delta
+  mario %= jump arrows
+  mario %= walk arrows
+  mario %= physics delta
+  io (Time <$> now)
 -----------------------------------------------------------------------------
-gravity :: Double -> Model -> Model
-gravity dt m@Model{..} = m { vy = if y > 0 then vy - (dt / 4) else 0 }
+jump :: Arrows -> Mario -> Mario
+jump Arrows{..} m@Mario{..}
+  | arrowY > 0 && vy == 0 = m { vy = 6 }
+  | otherwise = m
 -----------------------------------------------------------------------------
-physics :: Double -> Model -> Model
-physics dt m@Model{..}
+gravity :: Double -> Mario -> Mario
+gravity dt m@Mario{..} = m { vy = if y > 0 then vy - (dt / 4) else 0 }
+-----------------------------------------------------------------------------
+physics :: Double -> Mario -> Mario
+physics dt m@Mario{..}
   = m
   { x = x + dt * vx
   , y = max 0 (y + dt * vy)
   }
 -----------------------------------------------------------------------------
-walk :: Arrows -> Model -> Model
-walk Arrows{..} m@Model{..}
+walk :: Arrows -> Mario -> Mario
+walk Arrows{..} m@Mario{..}
   = m
   { vx = fromIntegral arrowX
   , dir = if | arrowX < 0 -> L
@@ -121,46 +128,44 @@ walk Arrows{..} m@Model{..}
              | otherwise -> dir
   }
 -----------------------------------------------------------------------------
-display :: Model -> View model Action
-display m@Model{..} = marioImage
+viewMario :: Mario -> View model Action
+viewMario m@Mario{..} = marioImage
   where
     (h, w) = window
     groundY = 62 - (fromIntegral (fst window) / 2)
     marioImage =
         div_
-        [ height_ $ ms h
-        , width_ $ ms w
+        [ height_ (ms h)
+        , width_ (ms w)
         ]
         [ nodeHtml "style" []
           [ "@keyframes play { 100% { background-position: -296px; } }"
             -- dmj: use keyframes DSL for this
           ]
-        , div_ [CSS.style_ (marioStyle m groundY)] []
+        , div_
+          [ CSS.style_ (marioStyle m groundY)
+          ]
+          []
         ]
 -----------------------------------------------------------------------------
-marioStyle :: Model -> Double -> [CSS.Style]
-marioStyle Model{..} gy =
-  [ ("transform", matrix dir x $ abs (y + gy))
-  , ("display", "block")
-  , ("width", "37px")
-  , ("height", "37px")
-  , ("background-color", "transparent")
-  , ("background-image", "url(mario.png)")
-  , ("background-repeat", "no-repeat")
-  , ("background-position", spriteFrames !! frame)
-  , bool mempty ("animation", "play 0.8s steps(8) infinite") (y == 0 && vx /= 0)
+marioStyle :: Mario -> Double -> [CSS.Style]
+marioStyle Mario{..} gy =
+  [ CSS.transform $ matrix dir x $ abs (y + gy)
+  , CSS.display "block"
+  , CSS.width (CSS.px 37)
+  , CSS.height (CSS.px 37)
+  , CSS.backgroundColor CSS.transparent
+  , CSS.backgroundImage (CSS.url "mario.png")
+  , CSS.backgroundRepeat "no-repeat"
+  , CSS.backgroundPosition (spriteFrames !! frame)
+  ] ++
+  [ CSS.animation "play 0.8s steps(8) infinite"
+  | y == 0 && vx /= 0
   ] where
       frame
         | y > 0 = 1
         | otherwise = 0
 -----------------------------------------------------------------------------
 matrix :: Direction -> Double -> Double -> MisoString
-matrix dir x y =
-    "matrix("
-        <> (if dir == L then "-1" else "1")
-        <> ",0,0,1,"
-        <> ms x
-        <> ","
-        <> ms y
-        <> ")"
+matrix dir x y = CSS.matrix (if dir == L then -1 else 1) 0 0 1 x y
 -----------------------------------------------------------------------------

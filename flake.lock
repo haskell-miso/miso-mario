@@ -584,11 +584,11 @@
         "servant": "servant"
       },
       "locked": {
-        "lastModified": 1754249574,
-        "narHash": "sha256-nx5k/lCfAEYlf28CZ7u0MCjAf7iVSdBGFQEEQALDjkE=",
+        "lastModified": 1754673719,
+        "narHash": "sha256-rpEQJdlYgJUoBQ27lLB8xX4zhstz/8/3nV2f6HB0ahk=",
         "owner": "dmjio",
         "repo": "miso",
-        "rev": "8c4b85e6e1279bec9b66859c54f25209701b8153",
+        "rev": "dfe83f7c928c65de42e2edd0f95e984105d86c62",
         "type": "github"
       },
       "original": {
