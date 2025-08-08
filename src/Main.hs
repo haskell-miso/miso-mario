@@ -155,7 +155,7 @@ marioStyle Mario{..} gy =
   , CSS.width (CSS.px 37)
   , CSS.height (CSS.px 37)
   , CSS.backgroundColor CSS.transparent
-  , CSS.backgroundImage (CSS.url "mario.png")
+  , CSS.backgroundImage (CSS.url "assets/mario.png")
   , CSS.backgroundRepeat "no-repeat"
   , CSS.backgroundPosition (spriteFrames !! frame)
   ] ++
