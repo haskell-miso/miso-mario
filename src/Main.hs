@@ -13,7 +13,6 @@ import qualified Miso.Style as CSS
 data Action
   = GetArrows !Arrows
   | Time !Double
-  | WindowCoords !(Int, Int)
   | Start
 -----------------------------------------------------------------------------
 spriteFrames :: [MisoString]
@@ -39,7 +38,6 @@ main = run $ do
   startApp (component m updateMario viewMario)
     { subs =
         [ arrowsSub GetArrows
-        , windowCoordsSub WindowCoords
         ]
     , initialAction = Just Start
     }
@@ -50,7 +48,6 @@ data Mario = Mario
   , time, delta :: !Double
   , dir :: !Direction
   , arrows :: !Arrows
-  , window :: !(Int, Int)
   } deriving (Show, Eq)
 -----------------------------------------------------------------------------
 data Direction
@@ -68,7 +65,6 @@ defaultMario = Mario
   , time = 0
   , delta = 0
   , arrows = Arrows 0 0
-  , window = (0, 0)
   }
 -----------------------------------------------------------------------------
 updateMario :: Action -> Transition Mario Action
@@ -86,11 +82,6 @@ updateMario (Time newTime) = do
         { delta = (newTime - time m) / 20
         , time = newTime
         }
-updateMario (WindowCoords coords) = do
-  modify newMario
-  step =<< get
-    where
-      newMario m = m { window = coords }
 -----------------------------------------------------------------------------
 -- | Helper lens for 'Mario'
 mario :: Lens Mario Mario
@@ -129,14 +120,13 @@ walk Arrows{..} m@Mario{..}
   }
 -----------------------------------------------------------------------------
 viewMario :: Mario -> View model Action
-viewMario m@Mario{..} = marioImage
+viewMario m = marioImage
   where
-    (h, w) = window
-    groundY = 62 - (fromIntegral (fst window) / 2)
+    groundY = -400
     marioImage =
         div_
-        [ height_ (ms h)
-        , width_ (ms w)
+        [ height_ "400"
+        , width_ "400"
         ]
         [ nodeHtml "style" []
           [ "@keyframes play { 100% { background-position: -296px; } }"
