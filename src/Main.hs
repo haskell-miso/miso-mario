@@ -37,8 +37,7 @@ main = run $ do
   let m = defaultMario { time = time }
   startApp (component m updateMario viewMario)
     { subs =
-        [ wasdSub GetArrows
-        , arrowsSub GetArrows
+        [ arrowsSub GetArrows
         ]
     , initialAction = Just Start
     }
