@@ -8,7 +8,9 @@ module Main (main) where
 -----------------------------------------------------------------------------
 import           Miso
 import           Miso.Lens
-import qualified Miso.Style as CSS
+import           Miso.Html
+import           Miso.Html.Property
+import qualified Miso.CSS as CSS
 -----------------------------------------------------------------------------
 data Action
   = GetArrows !Arrows
