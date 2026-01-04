@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 module Main (main) where
 -----------------------------------------------------------------------------
-import           Miso
+import           Miso hiding ((!!))
 import           Miso.Lens
 import           Miso.Html
 import           Miso.Html.Property
