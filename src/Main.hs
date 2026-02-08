@@ -41,7 +41,7 @@ main = run $ do
     { subs =
         [ arrowsSub GetArrows
         ]
-    , initialAction = Just Start
+    , mount = Just Start
     }
 -----------------------------------------------------------------------------
 data Mario = Mario
