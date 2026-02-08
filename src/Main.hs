@@ -69,7 +69,7 @@ defaultMario = Mario
   , arrows = Arrows 0 0
   }
 -----------------------------------------------------------------------------
-updateMario :: Action -> Transition Mario Action
+updateMario :: Action -> Effect parent Mario Action
 updateMario Start = get >>= step
 updateMario (GetArrows arrs) = do
   modify newMario
@@ -89,7 +89,7 @@ updateMario (Time newTime) = do
 mario :: Lens Mario Mario
 mario = this
 -----------------------------------------------------------------------------
-step :: Mario -> Transition Mario Action
+step :: Mario -> Effect parent Mario Action
 step Mario{..} = do
   mario %= gravity delta
   mario %= jump arrows
