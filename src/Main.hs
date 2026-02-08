@@ -37,7 +37,7 @@ main :: IO ()
 main = do
   time <- now
   let m = defaultMario { time = time }
-  startApp (component m updateMario viewMario)
+  startApp mempty (component m updateMario viewMario)
     { subs =
         [ arrowsSub GetArrows
         ]
