@@ -34,7 +34,7 @@ foreign export javascript "hs_start" main :: IO ()
 #endif
 -----------------------------------------------------------------------------
 main :: IO ()
-main = run $ do
+main = do
   time <- now
   let m = defaultMario { time = time }
   startApp (component m updateMario viewMario)
